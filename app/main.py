@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import numpy as np
+import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy import stats
 
-# Page Configuration
+
 st.set_page_config(page_title="Solar and Weather Data Dashboard",
                    page_icon=":sun_with_face:",
                    layout="wide")
@@ -14,11 +15,10 @@ st.title("Solar and Weather Data Dashboard")
 
 @st.cache_data
 def load_data(file):
-    # Check the file type and read accordingly
     if file.name.endswith('.xlsx'):
-        data = pd.read_excel(file, engine='openpyxl')  # Use openpyxl for reading Excel files
+        data = pd.read_excel(file, engine='openpyxl')  
     elif file.name.endswith('.csv'):
-        data = pd.read_csv(file)  # Use read_csv for CSV files
+        data = pd.read_csv(file)  
     else:
         st.error("Unsupported file format. Please upload a CSV or Excel file.")
         st.stop()
@@ -35,18 +35,18 @@ with st.sidebar:
 # Load the data
 df = load_data(upload_file)
 
-# Normalize column names to lowercase for easier comparison
+
 df.columns = df.columns.str.lower()
 
-# Display the first few rows of the dataframe for manual inspection
+
 st.write("Preview of uploaded data:")
 st.dataframe(df.head())
 
-# Check for missing values
+
 st.write("Missing values per column:")
 st.write(df.isnull().sum())
 
-# Calculate and display summary statistics for numeric columns
+# Calculate and display summary statistics 
 st.write("Summary Statistics:")
 st.write(df.describe())
 
@@ -82,8 +82,12 @@ if 'cleaning' in df.columns and 'moda' in df.columns and 'modb' in df.columns:
     for col in ['moda', 'modb']:
         if col in df.columns:
             st.subheader(f"Impact of Cleaning on {col.upper()}")
-            fig = px.box([cleaned_df[col], non_cleaned_df[col]], labels={'variable': 'Cleaning Status', 'value': col.upper()})
-            st.plotly_chart(fig, use_container_width=True)
+            fig = plt.figure(figsize=(10, 6))
+            sns.boxplot(data=[cleaned_df[col], non_cleaned_df[col]], palette="Set2")
+            plt.title(f'Impact of Cleaning on {col.upper()}')
+            plt.xlabel('Cleaning Status')
+            plt.ylabel(col.upper())
+            st.pyplot(fig)
 
 # Correlation Analysis
 st.write("Correlation Analysis:")
@@ -99,8 +103,11 @@ if {'ghi', 'dni', 'dhi', 'tmoda', 'tmodb'}.issubset(df.columns):
 st.write("Wind Analysis:")
 if {'ws', 'wsgust', 'wd'}.issubset(df.columns):
     st.subheader("Wind Speed and Direction Analysis")
-    fig = px.scatter_polar(df, r='ws', theta='wd', color='wsgust', size='wsgust', title='Wind Speed and Direction Polar Plot')
-    st.plotly_chart(fig, use_container_width=True)
+    fig = plt.figure(figsize=(10, 6))
+    ax = fig.add_subplot(111, polar=True)
+    ax.scatter(df['wd'], df['ws'], c=df['wsgust'], s=df['wsgust'], cmap='viridis', alpha=0.75)
+    ax.set_title('Wind Speed and Direction Polar Plot')
+    st.pyplot(fig)
 
 # Temperature Analysis
 st.write("Temperature Analysis:")
@@ -114,13 +121,15 @@ st.write("Histograms:")
 for col in ['ghi', 'dni', 'dhi', 'ws', 'tamb']:
     if col in df.columns:
         st.subheader(f"Histogram of {col.upper()}")
-        fig = px.histogram(df, x=col, title=f"Histogram of {col.upper()}")
-        st.plotly_chart(fig, use_container_width=True)
+        fig = plt.figure(figsize=(10, 6))
+        sns.histplot(df[col], kde=True, color='blue')
+        plt.title(f'Histogram of {col.upper()}')
+        plt.xlabel(col.upper())
+        plt.ylabel('Frequency')
+        st.pyplot(fig)
 
 # Z-Score Analysis
 st.write("Z-Score Analysis:")
-from scipy import stats
-
 z_scores = pd.DataFrame()
 for col in ['ghi', 'dni', 'dhi', 'ws', 'tamb']:
     if col in df.columns:
@@ -135,13 +144,13 @@ if {'ghi', 'tamb', 'ws', 'rh'}.issubset(df.columns):
     fig = px.scatter(df, x='ghi', y='tamb', size='rh', color='ws', title='GHI vs. Tamb vs. WS', labels={'ghi': 'GHI', 'tamb': 'Temperature', 'rh': 'Relative Humidity'})
     st.plotly_chart(fig, use_container_width=True)
 
-
+# Data Cleaning
 st.write("Data Cleaning:")
 if 'comments' in df.columns:
     st.write("Comments column data:")
     st.write(df['comments'].value_counts())
     df.dropna(subset=['comments'], inplace=True)
 
-
+# Final cleaned dataframe preview
 st.write("Cleaned Data Preview:")
 st.dataframe(df.head())
