@@ -31,8 +31,8 @@ Installation
 
 1. Clone the Repository:
     ```bash
-    git clone https://github.com/your-username/solar-weather-dashboard.git
-    cd solar-weather-dashboard
+    git clone https://github.com/naPOME/solarAi.git
+    cd solarAi
     ```
 
 2. Create and Activate a Virtual Environment:
